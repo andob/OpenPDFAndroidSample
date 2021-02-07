@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.core.app.ActivityCompat
@@ -20,6 +19,7 @@ import okio.source
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
+import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity()
 {
@@ -45,24 +45,22 @@ class MainActivity : AppCompatActivity()
     @SuppressLint("StaticFieldLeak")
     fun onPermissionGranted()
     {
-        object : AsyncTask<Void, Void, File>()
-        {
-            override fun doInBackground(vararg params : Void?) : File
-            {
-                val imageUrl="https://www.phpclasses.org/browse/view/image/format/screenshot/file/18875/name/61081-bytes.jpg"
-                val imageFile=File(getExternalFilesDir(null), "test.jog")
+        //activity can get memory leaked but whatever, demo purposes
+        thread(start = true) {
 
-                URL(imageUrl).openStream().source().buffer().use { input ->
-                    FileOutputStream(imageFile).sink().buffer().use { output ->
-                        output.writeAll(input)
-                    }
+            val imageUrl="https://www.phpclasses.org/browse/view/image/format/screenshot/file/18875/name/61081-bytes.jpg"
+            val imageFile=File(getExternalFilesDir(null), "test.png")
+
+            URL(imageUrl).openStream().source().buffer().use { input ->
+                FileOutputStream(imageFile).sink().buffer().use { output ->
+                    output.writeAll(input)
                 }
-
-                return imageFile
             }
 
-            override fun onPostExecute(imageFile : File) = onImageFileDownloaded(imageFile)
-        }.execute()
+            runOnUiThread {
+                onImageFileDownloaded(imageFile)
+            }
+        }
     }
 
     fun onImageFileDownloaded(imageFile : File)
